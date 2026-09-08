@@ -13,24 +13,28 @@ const categorySchema = new mongoose.Schema(
 
 // Basic default categories to seed into the DB if you want an initial list
 const DEFAULT_CATEGORIES = [
-  "Sofas",
-  "Dining Tables",
-  "Bedroom",
-  "Outdoor",
-  "Chairs",
-  "Coffee Tables",
-  "Tea Tables",
-  "Storage",
-  "Office",
+  { nameAr: "كنب", nameEn: "Sofas" },
+  { nameAr: "طاولات طعام", nameEn: "Dining Tables" },
+  { nameAr: "غرف نوم", nameEn: "Bedroom" },
+  { nameAr: "أثاث خارجي", nameEn: "Outdoor" },
+  { nameAr: "كراسي", nameEn: "Chairs" },
+  { nameAr: "طاولات قهوة", nameEn: "Coffee Tables" },
+  { nameAr: "طاولات شاي", nameEn: "Tea Tables" },
+  { nameAr: "تخزين", nameEn: "Storage" },
+  { nameAr: "مكتب", nameEn: "Office" },
 ];
 
 categorySchema.statics.seedDefaults = async function () {
   const Category = this;
-  for (const name of DEFAULT_CATEGORIES) {
+  for (const { nameAr, nameEn } of DEFAULT_CATEGORIES) {
     try {
-      await Category.updateOne({ name }, { name }, { upsert: true });
+      await Category.updateOne(
+        { nameAr },
+        { nameAr, nameEn },
+        { upsert: true, runValidators: true },
+      );
     } catch (err) {
-      // ignore duplicate or other write errors during seeding
+      console.error(`Failed to seed category "${nameAr}":`, err.message);
     }
   }
 };
