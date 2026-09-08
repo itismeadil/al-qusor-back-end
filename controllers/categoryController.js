@@ -1,11 +1,11 @@
-const Category = require('../models/Category');
+const Category = require("../models/Category");
 
 // @desc    List all categories (for the dashboard's category dropdown)
 // @route   GET /api/categories
 // @access  Private
 const getCategories = async (req, res, next) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
+    const categories = await Category.find().sort({ nameAr: 1 });
     res.json(categories);
   } catch (err) {
     next(err);
@@ -17,16 +17,19 @@ const getCategories = async (req, res, next) => {
 // @access  Private
 const createCategory = async (req, res, next) => {
   try {
-    const { name } = req.body;
-    if (!name?.trim()) {
+    const { nameAr, nameEn } = req.body;
+    if (!nameAr?.trim()) {
       res.status(400);
-      throw new Error('Category name is required');
+      throw new Error("Arabic category name is required");
     }
 
-    const existing = await Category.findOne({ name: name.trim() });
+    const existing = await Category.findOne({ nameAr: nameAr.trim() });
     if (existing) return res.status(200).json(existing); // idempotent, avoids dupes
 
-    const category = await Category.create({ name: name.trim() });
+    const category = await Category.create({
+      nameAr: nameAr.trim(),
+      nameEn: nameEn?.trim() || "",
+    });
     res.status(201).json(category);
   } catch (err) {
     next(err);
@@ -38,7 +41,7 @@ const createCategory = async (req, res, next) => {
 // @access  Public
 const getPublicCategories = async (req, res, next) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
+    const categories = await Category.find().sort({ nameAr: 1 });
     res.json(categories);
   } catch (err) {
     next(err);

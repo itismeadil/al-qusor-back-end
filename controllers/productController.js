@@ -1,13 +1,15 @@
-const QRCode = require('qrcode');
-const cloudinary = require('../config/cloudinary');
-const Product = require('../models/Product');
+const QRCode = require("qrcode");
+const cloudinary = require("../config/cloudinary");
+const Product = require("../models/Product");
 
 // @desc    Get all products (dashboard list view)
 // @route   GET /api/products
 // @access  Private
 const getProducts = async (req, res, next) => {
   try {
-    const products = await Product.find().populate('category', 'name').sort({ createdAt: -1 });
+    const products = await Product.find()
+      .populate("category", "nameAr nameEn")
+      .sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
     next(err);
@@ -19,10 +21,13 @@ const getProducts = async (req, res, next) => {
 // @access  Private
 const getProductById = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category', 'name');
+    const product = await Product.findById(req.params.id).populate(
+      "category",
+      "nameAr nameEn",
+    );
     if (!product) {
       res.status(404);
-      throw new Error('Product not found');
+      throw new Error("Product not found");
     }
     res.json(product);
   } catch (err) {
@@ -36,9 +41,9 @@ const getProductById = async (req, res, next) => {
 const getPublicProducts = async (req, res, next) => {
   try {
     const products = await Product.find()
-      .populate('category', 'name')
+      .populate("category", "nameAr nameEn")
       .sort({ createdAt: -1 })
-      .select('name category price colors');
+      .select("nameAr nameEn category price colors");
     res.json(products);
   } catch (err) {
     next(err);
@@ -50,19 +55,24 @@ const getPublicProducts = async (req, res, next) => {
 // @access  Public
 const getPublicProduct = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category', 'name');
+    const product = await Product.findById(req.params.id).populate(
+      "category",
+      "nameAr nameEn",
+    );
     if (!product) {
       res.status(404);
-      throw new Error('Product not found');
+      throw new Error("Product not found");
     }
     // Only send what a customer should see — no createdBy, no internal fields.
     res.json({
       _id: product._id,
-      name: product.name,
+      nameAr: product.nameAr,
+      nameEn: product.nameEn,
       category: product.category,
-      description: product.description,
+      descriptionAr: product.descriptionAr,
+      descriptionEn: product.descriptionEn,
       price: product.price,
-      colors: product.colors
+      colors: product.colors,
     });
   } catch (err) {
     next(err);
@@ -74,20 +84,30 @@ const getPublicProduct = async (req, res, next) => {
 // @access  Private
 const createProduct = async (req, res, next) => {
   try {
-    const { name, category, description, price, colors } = req.body;
+    const {
+      nameAr,
+      nameEn,
+      category,
+      descriptionAr,
+      descriptionEn,
+      price,
+      colors,
+    } = req.body;
 
-    if (!name || !category || price === undefined) {
+    if (!nameAr || !category || price === undefined) {
       res.status(400);
-      throw new Error('Name, category, and price are required');
+      throw new Error("Arabic name, category, and price are required");
     }
 
     const product = await Product.create({
-      name,
+      nameAr,
+      nameEn,
       category,
-      description,
+      descriptionAr,
+      descriptionEn,
       price,
       colors: colors || [],
-      createdBy: req.admin._id
+      createdBy: req.admin._id,
     });
 
     // The QR points to the public product page. CLIENT_URL is the
@@ -98,8 +118,8 @@ const createProduct = async (req, res, next) => {
 
     const qrResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder: 'qr-catalog/qrcodes', public_id: String(product._id) },
-        (error, result) => (error ? reject(error) : resolve(result))
+        { folder: "qr-catalog/qrcodes", public_id: String(product._id) },
+        (error, result) => (error ? reject(error) : resolve(result)),
       );
       stream.end(qrBuffer);
     });
@@ -107,7 +127,7 @@ const createProduct = async (req, res, next) => {
     product.qrCodeUrl = qrResult.secure_url;
     await product.save();
 
-    res.status(201).json(await product.populate('category', 'name'));
+    res.status(201).json(await product.populate("category", "name"));
   } catch (err) {
     next(err);
   }
@@ -121,19 +141,29 @@ const updateProduct = async (req, res, next) => {
     const product = await Product.findById(req.params.id);
     if (!product) {
       res.status(404);
-      throw new Error('Product not found');
+      throw new Error("Product not found");
     }
 
-    const { name, description, price, category, colors } = req.body;
+    const {
+      nameAr,
+      nameEn,
+      descriptionAr,
+      descriptionEn,
+      price,
+      category,
+      colors,
+    } = req.body;
 
-    product.name = name ?? product.name;
-    product.description = description ?? product.description;
+    product.nameAr = nameAr ?? product.nameAr;
+    product.nameEn = nameEn ?? product.nameEn;
+    product.descriptionAr = descriptionAr ?? product.descriptionAr;
+    product.descriptionEn = descriptionEn ?? product.descriptionEn;
     product.price = price ?? product.price;
     product.category = category ?? product.category;
     product.colors = colors ?? product.colors;
 
     const updated = await product.save();
-    res.json(await updated.populate('category', 'name'));
+    res.json(await updated.populate("category", "nameAr nameEn"));
   } catch (err) {
     next(err);
   }
@@ -147,10 +177,10 @@ const deleteProduct = async (req, res, next) => {
     const product = await Product.findById(req.params.id);
     if (!product) {
       res.status(404);
-      throw new Error('Product not found');
+      throw new Error("Product not found");
     }
     await product.deleteOne();
-    res.json({ message: 'Product removed' });
+    res.json({ message: "Product removed" });
   } catch (err) {
     next(err);
   }
@@ -163,5 +193,5 @@ module.exports = {
   getPublicProduct,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
 };
